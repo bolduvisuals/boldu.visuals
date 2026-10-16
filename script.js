@@ -133,9 +133,9 @@ const supabaseClient = supabase.createClient(
 document.getElementById("contactForm").addEventListener("submit", async function(e) {
     e.preventDefault();
 
-    const nombre = document.getElementById("nombre").value;
-    const email = document.getElementById("email").value;
-    const mensaje = document.getElementById("mensaje").value;
+    const nombre = document.getElementById("Nombre").value;
+    const email = document.getElementById("Email").value;
+    const mensaje = document.getElementById("Mensaje").value;
 
     console.log(nombre, email, mensaje);
 
