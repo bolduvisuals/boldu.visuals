@@ -130,54 +130,40 @@ const supabaseClient = supabase.createClient(
     SUPABASE_KEY
 );
 
-const SUPABASE_URL = "https://mwafyhywpiygxkenqnhh.supabase.co";
-const SUPABASE_KEY = "sb_publishable_xMjIVu9VxHJY-cR6EnQgyw_wpG1mwEY";
+const contactForm = document.getElementById("contactForm");
 
-const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+if (contactForm) {
 
-document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("contactForm");
+    contactForm.addEventListener("submit", async function(e) {
 
-    if (!form) {
-        console.error("No se ha encontrado el formulario contactForm");
-        return;
-    }
-
-    form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
         const nombre = document.getElementById("Nombre").value.trim();
         const email = document.getElementById("Email").value.trim();
         const mensaje = document.getElementById("Mensaje").value.trim();
 
-        if (!nombre || !email || !mensaje) {
-            alert("Rellena todos los campos");
-            return;
-        }
+        console.log("Enviando:", nombre, email, mensaje);
 
         const { data, error } = await supabaseClient
             .from("Contacte")
             .insert([
                 {
-                    nombre: Nombre,
-                    email: Email,
-                    mensaje: Mensaje
+                    nombre: nombre,
+                    email: email,
+                    mensaje: mensaje
                 }
             ]);
 
         if (error) {
             console.error("ERROR SUPABASE:", error);
-            alert("Error: " + error.message);
+            alert("Error al enviar: " + error.message);
             return;
         }
 
-        console.log("Mensaje guardado:", data);
+        console.log("Guardado correctamente:", data);
 
         alert("Mensaje enviado correctamente");
 
-        form.reset();
+        contactForm.reset();
     });
-});
+}
