@@ -130,30 +130,14 @@ const supabaseClient = supabase.createClient(
     SUPABASE_KEY
 );
 
-document.getElementById("contactForm").addEventListener("submit", async (e) => {
+document.getElementById("contactForm").addEventListener("submit", async function(e) {
     e.preventDefault();
 
     const nombre = document.getElementById("nombre").value;
     const email = document.getElementById("email").value;
     const mensaje = document.getElementById("mensaje").value;
 
-    const { error } = await supabaseClient
-        .from("Contacte")
-        .insert([
-            {
-                nombre: nombre,
-                email: email,
-                mensaje: mensaje
-            }
-        ]);
+    console.log(nombre, email, mensaje);
 
-    if (error) {
-        console.error(error);
-        alert("Error al enviar el mensaje");
-        return;
-    }
-
-    alert("Mensaje enviado correctamente");
-
-    document.getElementById("contactForm").reset();
+    // envío a Supabase aquí
 });
