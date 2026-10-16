@@ -121,3 +121,39 @@ document.querySelector('.theme-btn').addEventListener('click', e => {
     { clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${rad}px at ${x}px ${y}px)`] },
     { duration: 700, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }));
 });
+
+const SUPABASE_URL = "https://mwafyhywpiygxkenqnhh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xMjIVu9VxHJY-cR6EnQgyw_wpG1mwEY";
+
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+document.getElementById("contactForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const nombre = document.getElementById("nombre").value;
+    const email = document.getElementById("email").value;
+    const mensaje = document.getElementById("mensaje").value;
+
+    const { error } = await supabaseClient
+        .from("Contacte")
+        .insert([
+            {
+                nombre: nombre,
+                email: email,
+                mensaje: mensaje
+            }
+        ]);
+
+    if (error) {
+        console.error(error);
+        alert("Error al enviar el mensaje");
+        return;
+    }
+
+    alert("Mensaje enviado correctamente");
+
+    document.getElementById("contactForm").reset();
+});
