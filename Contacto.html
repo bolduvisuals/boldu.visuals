@@ -47,13 +47,40 @@
       <div><span>Correo</span><a href="mailto:dboldurat1@gmail.com">dboldurat1@gmail.com</a></div>
     </div>
   </div>
-  <form name="contact" method="POST" data-netlify="true">
+  <form id="contactForm" name="contact">
     <h3>Envíame un mensaje</h3>
-    <input type="hidden" name="form-name" value="contact">
-    <input type="text" name="nombre" placeholder="Nombre" required>
-    <input type="email" name="email" placeholder="Correo electrónico" required>
-    <textarea name="mensaje" placeholder="Escribe tu mensaje" rows="5" required></textarea>
-    <button class="send" type="submit">Enviar mensaje</button>
+    <form id="contactForm">
+    <h3>Envíame un mensaje</h3>
+
+    <input
+        type="text"
+        id="nombre"
+        name="nombre"
+        placeholder="Nombre"
+        required
+    >
+
+    <input
+        type="email"
+        id="email"
+        name="email"
+        placeholder="Correo electrónico"
+        required
+    >
+
+    <textarea
+        id="mensaje"
+        name="mensaje"
+        placeholder="Escribe tu mensaje"
+        rows="5"
+        required
+    ></textarea>
+
+    <button class="send" type="submit">
+        Enviar mensaje
+    </button>
+
+</form>
   </form>
 </main>
 
