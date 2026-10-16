@@ -130,14 +130,54 @@ const supabaseClient = supabase.createClient(
     SUPABASE_KEY
 );
 
-document.getElementById("contactForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
+const SUPABASE_URL = "https://mwafyhywpiygxkenqnhh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xMjIVu9VxHJY-cR6EnQgyw_wpG1mwEY";
 
-    const nombre = document.getElementById("Nombre").value;
-    const email = document.getElementById("Email").value;
-    const mensaje = document.getElementById("Mensaje").value;
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
-    console.log(nombre, email, mensaje);
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("contactForm");
 
-    // envío a Supabase aquí
+    if (!form) {
+        console.error("No se ha encontrado el formulario contactForm");
+        return;
+    }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const nombre = document.getElementById("Nombre").value.trim();
+        const email = document.getElementById("Email").value.trim();
+        const mensaje = document.getElementById("Mensaje").value.trim();
+
+        if (!nombre || !email || !mensaje) {
+            alert("Rellena todos los campos");
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from("Contacte")
+            .insert([
+                {
+                    nombre: Nombre,
+                    email: Email,
+                    mensaje: Mensaje
+                }
+            ]);
+
+        if (error) {
+            console.error("ERROR SUPABASE:", error);
+            alert("Error: " + error.message);
+            return;
+        }
+
+        console.log("Mensaje guardado:", data);
+
+        alert("Mensaje enviado correctamente");
+
+        form.reset();
+    });
 });
