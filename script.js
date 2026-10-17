@@ -18,10 +18,14 @@ if (M) {
     set(); im.addEventListener('load', set, { once: true }); });
 }
 
-// menú móvil
+// menú móvil (se abre/cierra, se cierra al elegir página, con Escape o al ensanchar la ventana)
 const links = document.querySelector('.navlinks'), btn = document.querySelector('.menu-btn');
-btn.addEventListener('click', () => { const o = links.classList.toggle('open'); btn.textContent = o ? 'Cerrar' : 'Menú'; });
-links.addEventListener('click', e => { if (e.target.closest('a')) { links.classList.remove('open'); btn.textContent = 'Menú'; } });
+btn.setAttribute('aria-expanded', 'false');
+const setMenu = o => { links.classList.toggle('open', o); btn.textContent = o ? 'Cerrar' : 'Menú'; btn.setAttribute('aria-expanded', String(o)); document.body.style.overflow = o ? 'hidden' : ''; };
+btn.addEventListener('click', () => setMenu(!links.classList.contains('open')));
+links.addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });
+addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
+addEventListener('resize', () => { if (innerWidth > 900) setMenu(false); });
 
 // franja de transición entre páginas
 document.addEventListener('click', e => {
@@ -72,6 +76,17 @@ document.querySelectorAll('figure').forEach(f => {
   f.addEventListener('mousedown', () => { if (f.closest('.masonry,.gallery-section')) { fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go'); } });
 });
 
+// descargas: los botones se activan al pegar un enlace de Google Drive en data-drive (ver comentario en descargas.html)
+document.querySelectorAll('.dl-card').forEach(card => {
+  io.observe(card);
+  const a = card.querySelector('.dl-btn'), url = (card.dataset.drive || '').trim();
+  let ok = false;
+  try { const u = new URL(url); ok = u.protocol === 'https:' && ['drive.google.com', 'drive.app.goo.gl'].includes(u.hostname); } catch (e) {}
+  if (!ok) { if (url) console.warn('Enlace de Drive no válido en «' + card.querySelector('h2').textContent + '»: ' + url); return; }
+  a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+  a.textContent = 'Ver y descargar fotos'; a.classList.remove('is-off'); a.removeAttribute('aria-disabled');
+});
+
 // imanes en el menú
 const mags = [...document.querySelectorAll('.navlinks>a,.brand')];
 const mm = () => mags.forEach(m => { const r = m.getBoundingClientRect(); m._cx = r.left + r.width / 2; m._cy = r.top + r.height / 2; });
@@ -89,13 +104,21 @@ if (!calm && matchMedia('(hover:hover)').matches) {
 // lightbox
 if (imgs.length) {
   const lb = document.createElement('div');
-  lb.id = 'lb';
+  lb.id = 'lb'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-label', 'Visor de fotografías');
   lb.innerHTML = '<img alt=""><button class="x" aria-label="Cerrar">✕</button><button class="p" aria-label="Anterior">←</button><button class="n" aria-label="Siguiente">→</button>';
   document.body.appendChild(lb);
   let cur = 0;
   const show = i => { cur = (i + imgs.length) % imgs.length; lb.querySelector('img').src = imgs[cur].src; lb.classList.add('open'); document.body.style.overflow = 'hidden'; };
   const close = () => { lb.classList.remove('open'); document.body.style.overflow = ''; };
   imgs.forEach((im, i) => im.closest('figure').addEventListener('click', () => show(i)));
+  // táctil: desliza a izquierda/derecha para cambiar de foto, hacia abajo para cerrar
+  let sx = 0, sy = 0;
+  lb.addEventListener('touchstart', e => { sx = e.changedTouches[0].clientX; sy = e.changedTouches[0].clientY; }, { passive: true });
+  lb.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) show(cur + (dx < 0 ? 1 : -1));
+    else if (dy > 90 && dy > Math.abs(dx)) close();
+  }, { passive: true });
   lb.addEventListener('click', e => {
     if (e.target.classList.contains('p')) show(cur - 1);
     else if (e.target.classList.contains('n')) show(cur + 1);
@@ -131,54 +154,96 @@ document.querySelector('.theme-btn').addEventListener('click', e => {
   b.id = 'cookies'; b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', 'Aviso de cookies');
   b.innerHTML = '<h2>Cookies y privacidad</h2><p>Esta web solo usa almacenamiento técnico necesario (tu modo claro/oscuro y esta elección). No uso cookies de publicidad ni de seguimiento. Más información en la <a href="cookies.html">Política de cookies</a> y la <a href="privacidad.html">Política de privacidad</a>.</p><div class="btns"><button class="no">Rechazar</button><button class="ok">Aceptar</button></div>';
   document.body.appendChild(b);
-  const close = v => { save(v); b.classList.remove('show'); };
+  const pad = on => { document.body.style.paddingBottom = on && matchMedia('(max-width:560px)').matches ? b.offsetHeight + 'px' : ''; }; // en móvil el aviso no tapa el final de la página
+  const show = () => { b.classList.add('show'); pad(true); };
+  const close = v => { save(v); b.classList.remove('show'); pad(false); };
   b.querySelector('.ok').onclick = () => close('all');
   b.querySelector('.no').onclick = () => close('necessary');
-  document.addEventListener('click', e => { if (e.target.closest('[data-cookies]')) { e.preventDefault(); b.classList.add('show'); } });
-  if (!get()) setTimeout(() => b.classList.add('show'), 1200);
+  document.addEventListener('click', e => { if (e.target.closest('[data-cookies]')) { e.preventDefault(); show(); } });
+  if (!get()) setTimeout(show, 1200);
 })();
 
 // ==============================
 // SUPABASE - FORMULARIO CONTACTO
 // ==============================
-
-const BOLDU_SUPABASE_URL = "https://mwafyhywpiygxkenqnhh.supabase.co";
-const BOLDU_SUPABASE_KEY = "sb_publishable_xMjIVu9VxHJY-cR6EnQgyw_wpG1mwEY";
-
-const bolduSupabase = supabase.createClient(
-    BOLDU_SUPABASE_URL,
-    BOLDU_SUPABASE_KEY
-);
-
+// La casilla de privacidad es independiente de las cookies: aceptar o rechazar el aviso de cookies
+// no marca ni sustituye la casilla, y rechazar las opcionales no impide enviar el formulario.
 const contactForm = document.getElementById("contactForm");
 
 if (contactForm) {
+    const BOLDU_SUPABASE_URL = "https://mwafyhywpiygxkenqnhh.supabase.co";
+    const BOLDU_SUPABASE_KEY = "sb_publishable_xMjIVu9VxHJY-cR6EnQgyw_wpG1mwEY";
+    const bolduSupabase = window.supabase ? window.supabase.createClient(BOLDU_SUPABASE_URL, BOLDU_SUPABASE_KEY) : null;
+
+    const consent = document.getElementById("Privacidad");
+    const consentError = document.getElementById("consentError");
+    const statusEl = document.getElementById("formStatus");
+    const sendBtn = contactForm.querySelector(".send");
+    let sending = false;
+
+    const showConsentError = on => {
+        consentError.hidden = !on;
+        consent.setAttribute("aria-invalid", String(on));
+        consent.closest(".consent").classList.toggle("has-error", on);
+    };
+    const setStatus = (msg, type) => { statusEl.textContent = msg; statusEl.dataset.type = type || ""; };
+
+    consent.addEventListener("change", () => { if (consent.checked) showConsentError(false); });
+
+    // Validación HTML: el mensaje aparece junto a la casilla en vez de la burbuja del navegador
+    consent.addEventListener("invalid", e => {
+        e.preventDefault();
+        showConsentError(true);
+        if (!contactForm.querySelector(":invalid:not(#Privacidad)")) {
+            consent.focus({ preventScroll: true });
+            consent.scrollIntoView({ block: "center", behavior: calm ? "auto" : "smooth" });
+        }
+    });
+
     contactForm.addEventListener("submit", async function(e) {
         e.preventDefault();
+        if (sending) return;                       // evita envíos duplicados
+        setStatus("");
 
         const nombre = document.getElementById("Nombre").value.trim();
         const email = document.getElementById("Email").value.trim();
         const mensaje = document.getElementById("Mensaje").value.trim();
 
-        console.log("Enviando a Supabase:", nombre, email, mensaje);
-
-        const { error } = await bolduSupabase
-            .from("Contacte")
-            .insert([
-                {
-                    nombre: nombre,
-                    email: email,
-                    mensaje: mensaje
-                }
-            ]);
-
-        if (error) {
-            console.error("ERROR SUPABASE:", error);
-            alert("Error al enviar: " + error.message);
+        // Validación en JavaScript, antes de cualquier petición a Supabase
+        if (!consent.checked) {
+            showConsentError(true);
+            consent.focus({ preventScroll: true });
+            consent.scrollIntoView({ block: "center", behavior: calm ? "auto" : "smooth" });
             return;
         }
+        if (!nombre || !mensaje || !contactForm.checkValidity()) { contactForm.reportValidity(); return; }
+        showConsentError(false);
 
-        alert("Mensaje enviado correctamente");
-        contactForm.reset();
+        if (!bolduSupabase) { setStatus("No se ha podido cargar el servicio de envío. Recarga la página e inténtalo de nuevo.", "error"); return; }
+
+        sending = true;
+        sendBtn.disabled = true;
+        sendBtn.textContent = "Enviando…";
+        contactForm.setAttribute("aria-busy", "true");
+
+        try {
+            const { error } = await bolduSupabase
+                .from("Contacte")
+                .insert([{ nombre: nombre, email: email, mensaje: mensaje }]);
+            if (error) throw error;
+
+            contactForm.reset();                   // solo si el envío ha ido bien
+            consent.checked = false;
+            showConsentError(false);
+            setStatus("Mensaje enviado correctamente. ¡Gracias! Te responderé lo antes posible.", "ok");
+        } catch (err) {
+            console.error("ERROR SUPABASE:", err);
+            setStatus("No se ha podido enviar el mensaje. Tus datos siguen en el formulario: inténtalo de nuevo en unos minutos.", "error");
+        } finally {
+            sending = false;
+            sendBtn.disabled = false;
+            sendBtn.textContent = "Enviar mensaje";
+            contactForm.removeAttribute("aria-busy");
+        }
     });
 }
